@@ -27,7 +27,7 @@ def generate_ascii_stream():
     input_tokens = ds.tokenizer.tokenize(FAUSTUS)
     input_tokens = torch.Tensor(input_tokens).int().unsqueeze(0)
     model = Transformer(vocab_size=ds.tokenizer.vocab_size)
-    model.load_state_dict(torch.load("./billgpt/best-model.pth", weights_only=True, map_location=device))
+    model.load_state_dict(torch.load("/home/jamie/bill-gpt.pth", weights_only=True, map_location=device))
 
     model.to(device)
     input_tokens = input_tokens.to(device)
