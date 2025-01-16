@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASCII Stream</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 16px;
+            margin: 20px;
+        }
+        #stream {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .ascii-line {
+            margin: 5px 0;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASCII Stream</h1>
+    <div id="stream"></div>
+
+    <script>
+        const socket = io();
+        const streamDiv = document.getElementById('stream');
+        const maxLines = 100;
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('welcome', (msg) => {
+            addLine(msg.data);
+        });
+
+        socket.on('ascii_stream', (msg) => {
+            addLine(msg.data);
+        });
+
+        function addLine(text) {
+            const line = document.createElement('div');
+            line.className = 'ascii-line';
+            line.textContent = text;
+            streamDiv.appendChild(line);
+
+            // Keep only the last maxLines
+            while (streamDiv.children.length > maxLines) {
+                streamDiv.removeChild(streamDiv.firstChild);
+            }
+
+            // Auto-scroll to bottom
+            streamDiv.scrollTop = streamDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
