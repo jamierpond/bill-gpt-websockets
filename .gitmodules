@@ -1,0 +1,4 @@
+[submodule "billgpt"]
+    path = billgpt
+    url = https://github.com/jamierpond/bill-gpt.git
+    branch = main
