@@ -1,9 +1,15 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 import random
-import string
 import time
 from threading import Event
+from billgpt.model import Transformer
+from billgpt.data import TextDataset, BILL_PATH
+import torch
+from billgpt.train import FAUSTUS
+from billgpt.infer import generate
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -15,31 +21,25 @@ connected_clients = set()
 thread = None
 thread_stop_event = Event()
 
-# ASCII art patterns you can use
-ASCII_PATTERNS = [
-    ".-*-.",
-    "|[+]|",
-    "<=>",
-    "/-\\",
-    "\\-/",
-    "{o}",
-    "[-]",
-    "(~)",
-]
-
 def generate_ascii_stream():
     """Generate a continuous stream of ASCII patterns"""
-    print("Starting ASCII generation thread...")
-    while not thread_stop_event.is_set():
-        if connected_clients:  # Only emit if there are connected clients
-            # Create an interesting pattern
-            pattern = random.choice(ASCII_PATTERNS)
-            random_chars = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
-            stream_data = f"{pattern} {random_chars} {pattern}"
+    ds = TextDataset(BILL_PATH)
+    input_tokens = ds.tokenizer.tokenize(FAUSTUS)
+    input_tokens = torch.Tensor(input_tokens).int().unsqueeze(0)
+    model = Transformer(vocab_size=ds.tokenizer.vocab_size)
+    model.load_state_dict(torch.load("./billgpt/best-model.pth", weights_only=True, map_location=device))
 
-            # Emit to all connected clients
-            socketio.emit('ascii_stream', {'data': stream_data})
-            print(f"Emitted: {stream_data}")
+    model.to(device)
+    input_tokens = input_tokens.to(device)
+
+    initial_context = input_tokens
+
+    while not thread_stop_event.is_set():
+        def emit(data):
+            socketio.emit('ascii_stream', {'data': data})
+
+        if connected_clients:  # Only emit if there are connected clients
+            generate(model, initial_context, max_len=int(1e18), next_token_callback=emit)
 
         # Add some randomness to the timing
         time.sleep(random.uniform(0.5, 2))
@@ -64,7 +64,7 @@ def handle_connect():
         thread = socketio.start_background_task(generate_ascii_stream)
         print("Started background task")
 
-    emit('welcome', {'data': 'Welcome to the ASCII stream!'})
+    emit('welcome', {'data': 'Welcome to BillGPT!'})
 
 @socketio.on('disconnect')
 def handle_disconnect():

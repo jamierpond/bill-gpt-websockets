@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ASCII Stream</title>
+    <title>BillGPT</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body {
@@ -25,13 +25,13 @@
     </style>
 </head>
 <body>
-    <h1>ASCII Stream</h1>
+    <h1>BillGPT</h1>
     <div id="stream"></div>
 
     <script>
         const socket = io();
         const streamDiv = document.getElementById('stream');
-        const maxLines = 100;
+        const maxTokens = 5000;
 
         socket.on('connect', () => {
             console.log('Connected to server');
@@ -46,13 +46,13 @@
         });
 
         function addLine(text) {
-            const line = document.createElement('div');
+            const line = document.createElement('span');
             line.className = 'ascii-line';
             line.textContent = text;
             streamDiv.appendChild(line);
 
-            // Keep only the last maxLines
-            while (streamDiv.children.length > maxLines) {
+            // Keep only the last maxTokens
+            while (streamDiv.children.length > maxTokens) {
                 streamDiv.removeChild(streamDiv.firstChild);
             }
 
