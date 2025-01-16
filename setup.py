@@ -7,5 +7,6 @@ setup(
     install_requires=[
         "Flask",
         "flask_socketio",
+        "black",
     ],
 )
